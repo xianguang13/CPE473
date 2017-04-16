@@ -17,7 +17,7 @@ vec3 pixelray (Camera *c, int width, int height, int x, int y, int mode) {
 	pixel = normalize(right + up + ray);
 	if(mode == 1) {
 		cout << std::setprecision(4);
-		cout << "Pixel: [" << x << " " << y << "] Ray: {" << c->location.x << " " << c->location.y << " " << c->location.z << "} -> {" << pixel.x << " " << pixel.y << " " << pixel.z << "}" << endl;
+		cout << "Pixel: [" << x << ", " << y << "] Ray: {" << c->location.x << " " << c->location.y << " " << c->location.z << "} -> {" << pixel.x << " " << pixel.y << " " << pixel.z << "}" << endl;
 	}
 	return pixel;
 }
@@ -63,7 +63,7 @@ vec3 firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int 
 	}
 	if(mode == 1) {
   		if(T != 99999999) {
-			cout << "T: " <<  T << endl;
+			cout << "T = " <<  T << endl;
 			if(o->at(index)->type == 1) {
 				Sphere *s = dynamic_cast<Sphere *>(o->at(index));
 				cout << "Object Type: Sphere" << endl;

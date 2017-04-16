@@ -3,6 +3,8 @@
 #include <string.h>
 #include "functions.cpp"
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
 //Globals
 using namespace std;
@@ -181,6 +183,7 @@ void parse(char *filename) {
 
 void printAll() {
 	int i;
+	cout << std::setprecision(4);
 	printf("Camera:\n");
 	cout << "- Location: {" << myCamera.location.x << " " <<  myCamera.location.y << " " << myCamera.location.z << "}" << endl;
 	cout << "- Up: {" << myCamera.up.x << " " <<  myCamera.up.y << " " <<  myCamera.up.z << "}" << endl;
@@ -189,12 +192,12 @@ void printAll() {
 	printf("\n---\n\n");
 	printf("%d light(s)\n\n", myLight.size());
 	for(i = 0; i < myLight.size(); i++) {
-		printf("Light[%d]\n", i);
-		cout << "- Locatoin: {" <<  myLight.at(i).location.x << " " << myLight.at(i).location.y << " " <<  myLight.at(i).location.z << "}" << endl;
+		printf("Light[%d]:\n", i);
+		cout << "- Location: {" <<  myLight.at(i).location.x << " " << myLight.at(i).location.y << " " <<  myLight.at(i).location.z << "}" << endl;
 		cout << "- Color: {" <<  myLight.at(i).color.x << " " <<  myLight.at(i).color.y << " " <<  myLight.at(i).color.z << "}" << endl;
 	}
 	printf("\n---\n\n");
-	printf("%d objects(s)\n", myObject.size());
+	printf("%d object(s)\n", myObject.size());
 	for(i = 0; i < myObject.size(); i++) {
 		printf("\nObject[%d]:\n", i);
 		if(myObject.at(i)->type == 1) {
