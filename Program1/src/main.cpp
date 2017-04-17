@@ -7,6 +7,9 @@
 
 int main(int argc, char *argv[]) {
 	parse(argv[2]);
+	while(argv) {
+		printf("%s\n", argv);
+	}
 	if(argc == 3 && strcmp(argv[1], "sceneinfo") == 0) {
 		printAll();
 	}
