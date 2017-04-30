@@ -67,17 +67,18 @@ vec3 firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int 
 			if(o->at(index)->type == 1) {
 				Sphere *s = dynamic_cast<Sphere *>(o->at(index));
 				cout << "Object Type: Sphere" << endl;
-				cout << "Color: " << s->color.x << " " << s->color.y << " " << s->color.z << endl;
+				cout << "Color: (" << s->color.x << ", " << s->color.y << ", " << s->color.z << ")" << endl;
 			}
 			else {
 				Plane *p = dynamic_cast<Plane *>(o->at(index));
 				cout << "Object Type: Plane" << endl;
-				cout << "Color: " << p->color.x << " " << p->color.y << " " << p->color.z << endl;
+				cout << "Color: (" << p->color.x << ", " << p->color.y << ", " << p->color.z << ")" <<  endl;
 			}
 		}
 		else {
 			cout << "No Hit" << endl;
 		}
+
 	}
 
 	else {
