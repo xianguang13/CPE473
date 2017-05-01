@@ -119,18 +119,28 @@ vec3 cook_tor(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, 
 vec3 pixelColor(Camera c, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode) {
 	int index;
 	vec3 color = vec3(0, 0, 0);
-	vec3 pixRay = pixelray(&c, width, height, x, y, mode);
+	vec3 pixRay = pixelray(&c, width, height, x, y, 0);
 	float T = firsthit (&c, &o, width, height, x, y, mode, &index);
+
 	//Hits Something
 	if(index != -1) {
 		if(brdf == 0) {
-			color = blinn_phong(c, l, o, T, index, width, height, x, y, pixRay);			
+			color = blinn_phong(c, l, o, T, index, width, height, x, y, pixRay);
+			if(mode == 1) {
+				cout << "BRDF: Blinn-Phong" << endl;
+			}
 		}
 		else if(brdf == 1) {
 			color = cook_tor(c, l, o, T, index, width, height, x, y, pixRay);
+			if(mode == 1) {
+				cout << "BRDF: Alternate" << endl;
+			}
 		}
 	}
-
+	if(mode == 1) {
+		cout << std::setprecision(4);
+		cout << "Color: (" << (unsigned int) round(255.f * color.r) << ", " << (unsigned int) round(255.f * color.g) << ", " << (unsigned int) round(255.f * color.b) << ")" << endl;
+	}
 	return color;
 }
 
