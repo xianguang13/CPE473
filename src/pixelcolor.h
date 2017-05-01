@@ -1,8 +1,8 @@
-#ifndef RENDER_H
-#define RENDER_H
+#ifndef PIXELCOLOR_H
+#define PIXELCOLOR_H
 #include "data.h"
 #include <vector>
 
-void pixelcolor(Camera c, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int mode);
+glm::vec3 pixelColor(Camera c, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode);
 
 #endif

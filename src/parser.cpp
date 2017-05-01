@@ -38,6 +38,10 @@ void getPlane(FILE *fp, Plane *newPlane) {
 			x = atof(strtok(NULL, delim));
 			strtok(NULL, delim);
 			y = atof(strtok(NULL, delim));
+
+			newPlane->roughness = 0.7f;
+			newPlane->metallic = 0.1f;
+			newPlane->ior = 1.6f;
 			newPlane->set_ambient(x);
 			newPlane->set_diffuse(y);
 		}
@@ -68,6 +72,25 @@ void getSphere(FILE *fp, Sphere *newSphere) {
 			x = atof(strtok(NULL, delim));
 			strtok(NULL, delim);
 			y = atof(strtok(NULL, delim));
+			
+			newSphere->roughness = 0.7f;
+			newSphere->metallic = 0.1f;
+			newSphere->ior = 1.6f;
+
+			while(token = strtok(NULL, delim)) {
+				if(strcmp(token, "specular") == 0) {
+					newSphere->specular = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "roughness") == 0) {
+					newSphere->roughness = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "metallic") == 0) {
+					newSphere->metallic = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "ior") == 0) {
+					newSphere->ior = atof(strtok(NULL, delim));
+				}
+			}
 			newSphere->set_ambient(x);
 			newSphere->set_diffuse(y);
 		}

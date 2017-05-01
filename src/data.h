@@ -29,15 +29,21 @@ class Object {
 	public:
 		virtual void dummy() {};
 	   int type;
+
+		float diffuse;
+		float ambient;
+		float specular;
+		float roughness;
+		float metallic;
+		float ior;
+		glm::vec3 color;
+		
 };
 
 class Sphere: public Object{
    public:
       glm::vec3 center;
       float radius;
-      glm::vec3 color;
-      float ambient;
-      float diffuse;
 		glm::vec3 translate;
 
 		void set_center(float, float, float);
@@ -52,9 +58,6 @@ class Plane: public Object {
    public:
       glm::vec3 normal;
       float distance;
-      glm::vec3 color;
-      float ambient;
-      float diffuse;
 
 		void set_normal(float, float, float);
 		void set_color(float, float, float);
