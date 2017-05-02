@@ -65,3 +65,15 @@ class Plane: public Object {
 		void set_ambient(float);
 		void set_diffuse(float);
 };
+
+class Triangle: public Object {
+	public:
+		glm::vec3 p1;
+		glm::vec3 p2;
+		glm::vec3 p3;
+
+		void set_p1(float, float, float);
+		void set_p2(float, float, float);
+		void set_p3(float, float, float);
+		void set_color(float, float, float);
+};

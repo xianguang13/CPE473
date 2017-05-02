@@ -48,12 +48,75 @@ void getPlane(FILE *fp, Plane *newPlane) {
 	}
 }
 
+void getTriangle(FILE *fp, Triangle *newT) {
+	int i;
+	char buff[255];
+	char *token;
+	float x, y, z;
+	for(i = 0; i < 6; i++) {
+		fgets(buff, sizeof(buff), fp);
+		if(strlen(buff) < 2) {
+			break;
+		}
+		token = strtok(buff, delim);
+		if(i < 3) {
+			x = atof(token);
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			if(i == 0) {
+				newT->set_p1(x, y, z);
+			}
+			if(i == 1) {
+				newT->set_p2(x, y, z);
+			}
+			if(i == 2) {
+				newT->set_p3(x, y, z);
+			}
+		}
+
+		else if(strcmp(token, "pigment") == 0) {
+			strtok(NULL, delim);
+			strtok(NULL, delim);
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newT->set_color(x, y, z);
+		}
+
+		else if(strcmp(token, "finish") == 0) {
+			newT->roughness = 0.7f;
+			newT->metallic = 0.1f;
+			newT->ior = 1.6f;
+
+			while(token = strtok(NULL, delim)) {
+				if(strcmp(token, "ambient") == 0) {
+					newT->ambient = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "diffuse") == 0) {
+					newT->diffuse = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "specular") == 0) {
+					newT->specular = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "roughness") == 0) {
+					newT->roughness = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "metallic") == 0) {
+					newT->metallic = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "ior") == 0) {
+					newT->ior = atof(strtok(NULL, delim));
+				}
+			}
+		}
+	}
+}
 void getSphere(FILE *fp, Sphere *newSphere) {
 	int i;
 	char buff[255];
 	char *token;
 	float x, y, z;
-	for(i = 0; i < 3; i++) {
+	for(i = 0; i < 4; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
@@ -200,6 +263,14 @@ void parse(char *filename) {
 				getPlane(fp, newPlane);
 				myObject.push_back(newPlane);
 			}
+
+			else if(strcmp(token, "triangle") == 0) {
+				Object *o = new Triangle;
+				Triangle *newTriang = dynamic_cast<Triangle *> (o);
+				newTriang->type = 3;
+				getTriangle(fp, newTriang);
+				myObject.push_back(newTriang);
+			}
 		}
 	}
 }
@@ -240,6 +311,16 @@ void printAll() {
 			printf("- Material:\n");
 			cout << "  - Ambient: " <<  dynamic_cast<Plane *>(myObject.at(i))->ambient << endl;
 			cout << "  - Diffuse: " <<  dynamic_cast<Plane *>(myObject.at(i))->diffuse << endl;
+		}
+		else if(myObject.at(i)->type = 3) {
+			printf("- Type: Triangle\n");
+			cout << "- p1: {" << dynamic_cast<Triangle *>(myObject.at(i))->p1.x << " " << dynamic_cast<Triangle *> (myObject.at(i))->p1.y << " " << dynamic_cast<Triangle *>(myObject.at(i))->p1.z << "}" << endl;
+			cout << "- p2: {" << dynamic_cast<Triangle *>(myObject.at(i))->p2.x << " " << dynamic_cast<Triangle *> (myObject.at(i))->p2.y << " " << dynamic_cast<Triangle *>(myObject.at(i))->p2.z << "}" << endl;
+			cout << "- p3: {" << dynamic_cast<Triangle *>(myObject.at(i))->p3.x << " " << dynamic_cast<Triangle *> (myObject.at(i))->p3.y << " " << dynamic_cast<Triangle *>(myObject.at(i))->p3.z << "}" << endl;
+			cout << "- Color: {" <<  dynamic_cast<Triangle *>(myObject.at(i))->color.x << " " << dynamic_cast<Triangle*> (myObject.at(i))->color.y << " " <<  dynamic_cast<Triangle *> (myObject.at(i))->color.z << "}" << endl;
+			printf("- Material:\n");
+			cout << "  - Ambient: " <<  dynamic_cast<Triangle *>(myObject.at(i))->ambient << endl;
+			cout << "  - Diffuse: " <<  dynamic_cast<Triangle *>(myObject.at(i))->diffuse << endl;
 		}
 	}
 }

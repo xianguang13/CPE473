@@ -90,3 +90,26 @@ void Plane::set_diffuse(float x) {
 	diffuse = x;
 }
 
+void Triangle::set_p1(float x, float y, float z) {
+	p1.x = x;
+	p1.y = y;
+	p1.z = z;
+}
+
+void Triangle::set_p2(float x, float y, float z) {
+	p2.x = x;
+	p2.y = y;
+	p2.z = z;
+}
+
+void Triangle::set_p3(float x, float y, float z) {
+	p3.x = x;
+	p3.y = y;
+	p3.z = z;
+}
+
+void Triangle::set_color(float r, float g, float b) {
+	color.x = r;
+	color.y = g;
+	color.z = b;
+}
