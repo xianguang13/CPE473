@@ -22,6 +22,44 @@ vec3 pixelray (Camera *c, int width, int height, int x, int y, int mode) {
 	return pixel;
 }
 
+int hit_tri(vec3 r, vec3 camera, vec3 a, vec3 b, vec3 c, float *T) {
+	//compute temp
+	float A = a.x - b.x;
+	float B = a.y - b.y;
+	float C = a.z - b.z;
+
+	float D = a.x - c.x;
+	float E = a.y - c.y;
+	float F = a.z - c.z;
+
+	float G = r.x;
+	float H = r.y;
+	float I = r.z;
+
+	float J = a.x - camera.x;
+	float K = a.y - camera.y;
+	float L = a.z - camera.z;
+
+	float M = A * (E*I - H*F) + B * (G*F - D*I) + C*(D*H - E*G);
+	float Beta = (J* (E * I - H * F)+K*(G*F-D*I)+L*(D*H-E*G)) / M;
+	float Gamma = (I*(A*K - J*B) + H*(J*C - A*L) + G*(B*L - K*C)) / M;
+	float Temp = -(F*(A*K - J*B) + E*(J*C - A*L) + D*(B*L - K*C)) / M;
+
+	if(Gamma < 0 || Gamma > 1) {
+		return 0;
+	}
+	if(Beta < 0 || Beta > 1 - Gamma) {
+		return 0;
+	}
+	if(Temp < *T && Temp >= 0) {
+		*T = Temp;
+		return 1;
+	}
+	return 0;
+}	
+
+
+
 float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx) {
 	vec3 pixel = pixelray(c, width, height, x, y, mode);
 	int i, index;
@@ -60,6 +98,18 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 				continue;
 			}
 		}
+
+		else if(o->at(i)->type == 3) {
+			Triangle *myT = dynamic_cast<Triangle *>(o->at(i));
+			if(hit_tri(pixel, c->location, myT->p1, myT->p2, myT->p3, &T) == 1) {
+				index = i;
+			}
+			else {
+				continue;
+			}
+		}
+
+
 	}
 	if(mode == 1) {
   		if(T != 99999999) {
@@ -68,9 +118,12 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 				Sphere *s = dynamic_cast<Sphere *>(o->at(index));
 				cout << "Object Type: Sphere" << endl;
 			}
-			else {
+			else if(o->at(index)->type == 2){
 				Plane *p = dynamic_cast<Plane *>(o->at(index));
 				cout << "Object Type: Plane" << endl;
+			}
+			else if(o->at(index)->type == 3) {
+				cout << "Object Type: Triangle" << endl;
 			}
 			*indx = index;
 		}
@@ -130,6 +183,17 @@ float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int heigh
 				continue;
 			}
 		}
+
+		else if(o->at(i)->type == 3) {
+			Triangle *myT = dynamic_cast<Triangle *>(o->at(i));
+			if(hit_tri(pixel, origin, myT->p1, myT->p2, myT->p3, &T)) {
+				index = i;
+			}
+			else {
+				continue;
+			}
+		}
+
 	}
 	if(mode == 1) {
   		if(T != 99999999) {
@@ -138,9 +202,12 @@ float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int heigh
 				Sphere *s = dynamic_cast<Sphere *>(o->at(index));
 				cout << "Object Type: Sphere" << endl;
 			}
-			else {
+			else if(o->at(index)->type == 2){
 				Plane *p = dynamic_cast<Plane *>(o->at(index));
 				cout << "Object Type: Plane" << endl;
+			}
+			else if(o->at(index)->type == 3) {
+				cout << "Object Type: Triangle" << endl;
 			}
 			*indx = index;
 		}

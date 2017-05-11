@@ -36,6 +36,9 @@ class Object {
 		float roughness;
 		float metallic;
 		float ior;
+		float reflection;
+		float refraction;
+		float filter;
 		glm::vec3 color;
 		
 };

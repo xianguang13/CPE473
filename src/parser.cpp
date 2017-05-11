@@ -32,18 +32,41 @@ void getPlane(FILE *fp, Plane *newPlane) {
 			y = atof(strtok(NULL, delim));
 			z = atof(strtok(NULL, delim));
 			newPlane->set_color(x, y, z);
+			if(x = atof(strtok(NULL, delim))) {
+				newPlane->filter = x;
+			}
 		}
 		else if(strcmp(token, "finish") == 0) {
-			strtok(NULL, delim);
-			x = atof(strtok(NULL, delim));
-			strtok(NULL, delim);
-			y = atof(strtok(NULL, delim));
-
 			newPlane->roughness = 0.7f;
 			newPlane->metallic = 0.1f;
 			newPlane->ior = 1.6f;
-			newPlane->set_ambient(x);
-			newPlane->set_diffuse(y);
+
+			while(token = strtok(NULL, delim)) {
+				if(strcmp(token, "ambient") == 0) {
+					newPlane->ambient = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "diffuse") == 0) {
+					newPlane->diffuse = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "specular") == 0) {
+					newPlane->specular = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "roughness") == 0) {
+					newPlane->roughness = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "metallic") == 0) {
+					newPlane->metallic = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "ior") == 0) {
+					newPlane->ior = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "reflection") == 0) {
+					newPlane->reflection = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "refraction") == 0) {
+					newPlane->refraction = atof(strtok(NULL, delim));
+				}
+			}
 		}
 	}
 }
@@ -81,6 +104,9 @@ void getTriangle(FILE *fp, Triangle *newT) {
 			y = atof(strtok(NULL, delim));
 			z = atof(strtok(NULL, delim));
 			newT->set_color(x, y, z);
+			if(x = atof(strtok(NULL, delim))) {
+				newT->filter = x;
+			}
 		}
 
 		else if(strcmp(token, "finish") == 0) {
@@ -107,10 +133,17 @@ void getTriangle(FILE *fp, Triangle *newT) {
 				else if(strcmp(token, "ior") == 0) {
 					newT->ior = atof(strtok(NULL, delim));
 				}
+				else if(strcmp(token, "reflection") == 0) {
+					newT->reflection = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "refraction") == 0) {
+					newT->refraction = atof(strtok(NULL, delim));
+				}
 			}
 		}
 	}
 }
+
 void getSphere(FILE *fp, Sphere *newSphere) {
 	int i;
 	char buff[255];
@@ -129,6 +162,9 @@ void getSphere(FILE *fp, Sphere *newSphere) {
 			y = atof(strtok(NULL, delim));
 			z = atof(strtok(NULL, delim));
 			newSphere->set_color(x, y, z);
+			if(x = atof(strtok(NULL, delim))) {
+				newSphere->filter = x;
+			}
 		}
 		else if(strcmp(token, "finish") == 0) {
 			strtok(NULL,delim);
@@ -152,6 +188,12 @@ void getSphere(FILE *fp, Sphere *newSphere) {
 				}
 				else if(strcmp(token, "ior") == 0) {
 					newSphere->ior = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "reflection") == 0) {
+					newSphere->reflection = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "refraction") == 0) {
+					newSphere->refraction = atof(strtok(NULL, delim));
 				}
 			}
 			newSphere->set_ambient(x);
@@ -312,7 +354,7 @@ void printAll() {
 			cout << "  - Ambient: " <<  dynamic_cast<Plane *>(myObject.at(i))->ambient << endl;
 			cout << "  - Diffuse: " <<  dynamic_cast<Plane *>(myObject.at(i))->diffuse << endl;
 		}
-		else if(myObject.at(i)->type = 3) {
+		else if(myObject.at(i)->type == 3) {
 			printf("- Type: Triangle\n");
 			cout << "- p1: {" << dynamic_cast<Triangle *>(myObject.at(i))->p1.x << " " << dynamic_cast<Triangle *> (myObject.at(i))->p1.y << " " << dynamic_cast<Triangle *>(myObject.at(i))->p1.z << "}" << endl;
 			cout << "- p2: {" << dynamic_cast<Triangle *>(myObject.at(i))->p2.x << " " << dynamic_cast<Triangle *> (myObject.at(i))->p2.y << " " << dynamic_cast<Triangle *>(myObject.at(i))->p2.z << "}" << endl;

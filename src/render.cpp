@@ -17,7 +17,8 @@ void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height
 	
 	for(int y = 0; y  < height; y++) {
 		for(int x = 0; x < width; x++) {
-			glm::vec3 color = pixelColor(c, l, o, width, height, x, y, brdf, mode);
+			vec3 pixRay = pixelray(&c, width, height, x, y, 0);
+			glm::vec3 color = pixelColor(pixRay, c.location, l, o, width, height, x, y, brdf, mode, 0);
 		 
 			unsigned char red = std::min(255u, (unsigned int) round(color.r * 255.f));
 			unsigned char green = std::min(255u, (unsigned int) round(color.g * 255.f));

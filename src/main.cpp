@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
 		pixelray(&myCamera, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 1);
 	}
 	else if(argc == 7 && strcmp(argv[1], "firsthit") == 0) {
+		cout << "Not Testable atm" << endl;
 		//firsthit(&myCamera, &myObject, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 1);
 	}
 	else if(strcmp(argv[1], "render") == 0) {
@@ -29,12 +30,14 @@ int main(int argc, char *argv[]) {
 	}
 	
 	else if(strcmp(argv[1], "pixelcolor") == 0) {
-		 pixelColor(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 0, 1); 
+		 cout << "Not Testable atm" << endl;
+		 //pixelColor(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 0, 1); 
 	}
 
 	else {
 		printf("Usage: ./a.out sceneinfo <input_filename>\n");
 		printf("Usage: ./a.out pixelray <input_filename> <width> <height> <x> <y>\n");
+		printf("Usage: ./a.outrender <input_filename><width><height>\n");
 	}
 	return 1;
 }

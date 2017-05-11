@@ -21,10 +21,10 @@ bool checkShad(vec3 origin, vector<Object *> o, int width, int height, int x, in
 		return false;
 }
 
-vec3 blinn_phong(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
+vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
 	vec3 color;
 	//Solve point
-	vec3 p = c.location + pxRay * T; 
+	vec3 p = c + pxRay * T; 
 
 	//Ambient
 	color = o.at(i)->color * o.at(i)->ambient;
@@ -43,6 +43,13 @@ vec3 blinn_phong(Camera c, std::vector<Light> l, std::vector<Object *> o, float 
 			//It's a Plane
 			else if(o.at(i)->type == 2) {
 				norm = dynamic_cast<Plane*>(o.at(i))->normal;
+			}
+				
+			else if(o.at(i)->type == 3) {
+				Triangle *myT = dynamic_cast<Triangle *>(o.at(i));
+				vec3 P1 = myT->p2 - myT->p1;
+				vec3 P2 = myT->p3 - myT->p1;
+				norm = normalize(cross(P1, P2));
 			}
 
 			//Diffuse
@@ -57,10 +64,10 @@ vec3 blinn_phong(Camera c, std::vector<Light> l, std::vector<Object *> o, float 
 	return color;	
 }	
 
-vec3 cook_tor(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
+vec3 cook_tor(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
 	vec3 color;
 	//Solve point
-	vec3 p = c.location + pxRay * T; 
+	vec3 p = c + pxRay * T; 
 
 	//Ambient
 	color = o.at(i)->color * o.at(i)->ambient;
@@ -79,6 +86,14 @@ vec3 cook_tor(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, 
 			//It's a Plane
 			else if(o.at(i)->type == 2) {
 				norm = dynamic_cast<Plane*>(o.at(i))->normal;
+			}
+			
+			else if(o.at(i)->type == 3) {
+
+				Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
+				vec3 P1 = tempT->p3 - tempT->p1;
+				vec3 P2 = tempT->p2 - tempT->p1;
+				norm = normalize(cross(P1, P2));
 			}
 
 			vec3 h = normalize(lightDir + normalize(-pxRay));
@@ -108,6 +123,34 @@ vec3 cook_tor(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, 
 	return color;	
 }	
 
+float shlicksFormula(float ior, vec3 l, vec3 v) {
+	float f1 = pow(ior - 1, 2) / pow(ior + 1, 2);
+	float F = f1 + (1 - f1) * (1 - dot(l, v));
+	return F;
+}
+
+//Gets the Normal of the Object
+vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
+	vec3 norm = vec3(0, 0, 0);
+	//It's a Sphere
+	if(o.at(i)->type == 1) {
+		norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
+	}
+	//It's a Plane
+	else if(o.at(i)->type == 2) {
+		norm = dynamic_cast<Plane*>(o.at(i))->normal;
+	}
+	//It's a Triangle		
+	else if(o.at(i)->type == 3) {
+		Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
+		vec3 P1 = tempT->p3 - tempT->p1;
+		vec3 P2 = tempT->p2 - tempT->p1;
+		norm = normalize(cross(P1, P2));
+	}
+	
+	return norm;
+}
+
 
 
 /** Pixel Color
@@ -116,31 +159,47 @@ vec3 cook_tor(Camera c, std::vector<Light> l, std::vector<Object *> o, float T, 
  *	finds first object it hits. It then computes the shaded color for the pixel
  *	indicated via BRDF.
  **/
-vec3 pixelColor(Camera c, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode) {
+vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode, int iterations) {
 	int index;
 	vec3 color = vec3(0, 0, 0);
-	vec3 pixRay = pixelray(&c, width, height, x, y, 0);
-	float T = firsthit (&c, &o, width, height, x, y, mode, &index);
-
+	float local_contribution = 1;
+	float reflection_contribution = 1;
+	//vec3 pixRay = pixelray(&c, width, height, x, y, 0);
+	float T = checkHit(dir, origin, &o, width, height, x, y, mode, &index);
+	vec3 reflection_color;
 	//Hits Something
 	if(index != -1) {
+		vec3 p = origin + dir * T;
+		vec3 norm = getNormal(o, index, p);
+		float fresnel_reflectance = shlicksFormula(o.at(index)->ior, dir, norm);
+		local_contribution = (1 - o.at(index)->filter) * (1 - o.at(index)->reflection);
+		reflection_contribution = (1 - o.at(index)->filter) * (o.at(index)->reflection) + (o.at(index)->filter) * (fresnel_reflectance);
 		if(brdf == 0) {
-			color = blinn_phong(c, l, o, T, index, width, height, x, y, pixRay);
+			color = blinn_phong(origin, l, o, T, index, width, height, x, y, dir);
 			if(mode == 1) {
 				cout << "BRDF: Blinn-Phong" << endl;
 			}
 		}
 		else if(brdf == 1) {
-			color = cook_tor(c, l, o, T, index, width, height, x, y, pixRay);
+			color = cook_tor(origin, l, o, T, index, width, height, x, y, dir);
 			if(mode == 1) {
 				cout << "BRDF: Alternate" << endl;
 			}
+		}
+
+		//Check Number of Times
+		if(iterations < 6 && o.at(index)->reflection > 0) {
+			vec3 reflection_vector = dir - 2 * (dot(dir, norm)) * norm;
+			iterations++;
+			reflection_color = pixelColor(reflection_vector, (p+norm*.001f), l, o, width, height, x, y, brdf, mode, iterations) * o.at(index)->reflection;
 		}
 	}
 	if(mode == 1) {
 		cout << std::setprecision(4);
 		cout << "Color: (" << (unsigned int) round(255.f * color.r) << ", " << (unsigned int) round(255.f * color.g) << ", " << (unsigned int) round(255.f * color.b) << ")" << endl;
 	}
-	return color;
+	
+	return local_contribution * color + reflection_color * reflection_contribution;
 }
+
 
