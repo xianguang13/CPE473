@@ -125,7 +125,7 @@ vec3 cook_tor(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, in
 
 float shlicksFormula(float ior, vec3 l, vec3 v) {
 	float f1 = pow(ior - 1, 2) / pow(ior + 1, 2);
-	float F = f1 + (1 - f1) * pow((1 - dot(-l, v)), 5);
+	float F = f1 + (1 - f1) * (1 - dot(l, -v));
 	return F;
 }
 
@@ -155,14 +155,6 @@ vec3 getRefractVector(float sneil_ratio, vec3 dir, vec3 norm) {
 	return (sneil_ratio) * (dir - dot(dir, norm) * norm) - norm * sqrt(1 - pow(sneil_ratio,2) * (1 - pow(dot(-dir, norm), 2)));	
 }
 
-void printRecurse(vec3 dir, Object *o, int i, float t, vec3 n, vec3 p) {
-   cout << setprecision(4);
-   cout << "Ray: " << dir.x << " " << dir.y << " " << dir.z << endl;
-   cout << "Hit Obj ID: (" << i << " - " << o->type << " at T = " << t << ", Int: {" << p.x << " " << p.y << " " << p.z << "}" << endl;
-   cout << "Normal: " << n.x << " " << n.y << " " << n.z << endl;
-   cout << endl << endl;
-}
-
 /** Pixel Color
  * Discription:
  *	Command casts a ray in the scene found in input_file and for pixel (x, y)
@@ -172,9 +164,9 @@ void printRecurse(vec3 dir, Object *o, int i, float t, vec3 n, vec3 p) {
 vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode, int iterations) {
 	int index;
 	vec3 color = vec3(0, 0, 0);
-	float local_contribution = 1;
-	float reflection_contribution = 1;
-	float transmission_contribution = 1;
+	float local_contribution = 0;
+	float reflection_contribution = 0;
+	float transmission_contribution = 0;
 	//vec3 pixRay = pixelray(&c, width, height, x, y, 0);
 	float T = checkHit(dir, origin, &o, width, height, x, y, mode, &index);
 	vec3 reflection_color;
@@ -186,6 +178,10 @@ vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object 
 		sneil_ratio = 1.0f/o.at(index)->ior;
 		vec3 p = origin + dir * T;
 		vec3 norm = getNormal(o, index, p);
+		float fresnel_reflectance = shlicksFormula(o.at(index)->ior, dir, norm);
+		local_contribution = (1 - o.at(index)->filter) * (1 - o.at(index)->reflection);
+		reflection_contribution = (1 - o.at(index)->filter) * (o.at(index)->reflection) + (o.at(index)->filter) * (fresnel_reflectance);
+		transmission_contribution = (o.at(index)->filter) * (1 - fresnel_reflectance);
 		//Checks What method to use
 		if(brdf == 0) {
 			color = blinn_phong(origin, l, o, T, index, width, height, x, y, dir);
@@ -200,37 +196,22 @@ vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object 
 			}
 		}
 
-		if (mode == 1)
-			printRecurse(dir, o.at(index), index, T, norm, p);
-
 		//Check Number of Times
 		//Reflection
-		if(o.at(index)->reflection > 0 && iterations < 6) {
+		if(iterations < 6 && o.at(index)->reflection > 0) {
 			vec3 reflection_vector = dir - 2 * (dot(dir, norm)) * norm;
 			reflection_color = pixelColor(reflection_vector, (p+norm*.001f), l, o, width, height, x, y, brdf, mode, iterations + 1);
 		}
 
 		//Refraction
-		if(o.at(index)->refraction >= 0 && iterations < 6) {
+		if(iterations < 6 && o.at(index)->refraction > 0) {
 			if(dot(dir, norm) > 0) {
 				norm = -norm;
 				sneil_ratio = o.at(index)->ior;
 			}
-
-		
-			vec3 refraction_vector = (sneil_ratio) * (dir - dot(dir, norm) * norm) - norm * sqrt(1 - pow(sneil_ratio,2) * (1 - pow(dot(dir, -norm), 2)));	
-
-			//Beers Law
-			vec3 absorbance = (1.f - o.at(index)->color) * .15f * -T;
-			vec3 attenuation = vec3(pow(M_E, absorbance.r), pow(M_E, absorbance.g), pow(M_E, absorbance.b));
-
-			refraction_color = pixelColor(refraction_vector, (p - norm *.001f), l, o, width, height, x, y, brdf, mode, iterations + 1) * attenuation;
+			vec3 refraction_vector = (sneil_ratio) * (dir - dot(dir, norm) * norm) - norm * sqrt(1 - pow(sneil_ratio,2) * (1 - pow(dot(-dir, norm), 2)));	
+			refraction_color = pixelColor(refraction_vector, (p-norm *.001f), l, o, width, height, x, y, brdf, mode, iterations + 1);
 		}
-
-		float fresnel_reflectance = shlicksFormula(o.at(index)->ior, dir, norm);
-		local_contribution = (1 - o.at(index)->filter) * (1 - o.at(index)->reflection);
-		reflection_contribution = (1 - o.at(index)->filter) * (o.at(index)->reflection) + (o.at(index)->filter) * (fresnel_reflectance);
-		transmission_contribution = (o.at(index)->filter) * (1 - fresnel_reflectance);
 	}
 
 	//If printing mode is on

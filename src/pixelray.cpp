@@ -75,6 +75,14 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 			float desc =  B * B - 4 * A * C;
 			if(desc >= 0) {
 				temp =  (-(B) - sqrt(desc))/(2.0f * A);
+
+				float temp2 = (-B + sqrt(desc))/(2.0f * A);
+
+				if(temp < 0 && temp2 > 0) {
+					temp = temp2;
+				}
+				
+
 				if(temp < T && temp >= 0) {
 					T = temp;
 					index = i;
@@ -148,19 +156,27 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 
 float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx) {
 	int i, index;
-	float A, B, C, temp, T = 99999999;
+	float A, B, C, temp, temp2, T = 99999999;
 	vec3 K;
 	for (i = 0; i < o->size(); i++) {
 		if(o->at(i)->type == 1) {
 			K = origin - dynamic_cast<Sphere *>(o->at(i))->center;
+
 			A = dot(pixel, pixel);
-			B = dot((2.0f * pixel), K);
+			B = 2 * dot(pixel, K);
 			C = dot(K, K) - (dynamic_cast<Sphere *>(o->at(i))->radius * dynamic_cast<Sphere *>(o->at(i))->radius);
 			
 			float desc =  B * B - 4 * A * C;
 			if(desc >= 0) {
 				temp =  (-(B) - sqrt(desc))/(2.0f * A);
-				if(temp < T && temp >= 0) {
+				float temp2 = (-(B) + sqrt(desc))/(2.0f * A);
+				
+
+				if(temp < 0 && temp2 > 0) {
+					temp = temp2;
+				}
+
+				if(temp < T && temp > 0) {
 					T = temp;
 					index = i;
 				}

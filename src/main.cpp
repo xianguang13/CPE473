@@ -9,6 +9,8 @@
 int main(int argc, char *argv[]) {
 	int mode = 0;
 	parse(argv[2]);
+
+
 	if(argc == 3 && strcmp(argv[1], "sceneinfo") == 0) {
 		printAll();
 	}
@@ -33,6 +35,17 @@ int main(int argc, char *argv[]) {
 		 cout << "Not Testable atm" << endl;
 		 //pixelColor(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 0, 1); 
 	}
+	/*
+	else if(strcmp(argv[1], "pixeltrace") == 0) {
+		int width = atoi(argv[3]);
+		int height = atoi(argv[4]);
+		int x = atoi(argv[5]);
+		int y = atoi(argv[6]);
+		if(strcmp(argv[7], "altbrdf") == 0) {
+			mode = 1;
+		}
+		pixeltrace(myCamera, myLight, myObject, width, height, x, y, mode);
+	}	*/
 
 	else {
 		printf("Usage: ./a.out sceneinfo <input_filename>\n");

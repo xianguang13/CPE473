@@ -145,11 +145,11 @@ void getTriangle(FILE *fp, Triangle *newT) {
 }
 
 void getSphere(FILE *fp, Sphere *newSphere) {
-	int i;
+	int i, marker = 0;
 	char buff[255];
 	char *token;
 	float x, y, z;
-	for(i = 0; i < 4; i++) {
+	for(i = 0; i < 3; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
