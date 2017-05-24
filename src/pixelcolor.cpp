@@ -21,44 +21,30 @@ bool checkShad(vec3 origin, vector<Object *> o, int width, int height, int x, in
 		return false;
 }
 
-vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
+vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay, vec3 n) {
 	vec3 color;
+
 	//Solve point
 	vec3 p = c + pxRay * T; 
-
+	pxRay = o.at(i)->model * vec4(pxRay.x, pxRay.y, pxRay.z, 0.0);
+	
 	//Ambient
 	color = o.at(i)->color * o.at(i)->ambient;
 
 	//Calculate for all Lights
 	for (unsigned int j = 0; j < l.size(); j++) {
 		vec3 lightDir = normalize(l.at(j).location - p);
-		vec3 norm = vec3(0, 0, 0);
 
 		//CHECKU SHADOWU
 		if(checkShad((p + lightDir * 0.1f), o, width, height, x, y, lightDir, glm::distance(l.at(j).location, p))) {
-			//It's a Sphere
-			if(o.at(i)->type == 1) {
-				norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
-			}
-			//It's a Plane
-			else if(o.at(i)->type == 2) {
-				norm = dynamic_cast<Plane*>(o.at(i))->normal;
-			}
-				
-			else if(o.at(i)->type == 3) {
-				Triangle *myT = dynamic_cast<Triangle *>(o.at(i));
-				vec3 P1 = myT->p2 - myT->p1;
-				vec3 P2 = myT->p3 - myT->p1;
-				norm = normalize(cross(P1, P2));
-			}
 
 			//Diffuse
-			color += o.at(i)->color * o.at(i)->diffuse * l.at(j).color * glm::max(0.f, dot(norm, lightDir));
+			color += o.at(i)->color * o.at(i)->diffuse * l.at(j).color * glm::max(0.f, dot(n, lightDir));
 
 			//Specular
 			vec3 h = normalize(lightDir + normalize(-pxRay));
 			float shininess = 2/pow(o.at(i)->roughness,2) - 2;
-			color += o.at(i)->color * o.at(i)->specular * l.at(j).color * pow(glm::max(0.f, dot(h, norm)), shininess);
+			color += o.at(i)->color * o.at(i)->specular * l.at(j).color * pow(glm::max(0.f, dot(h, n)), shininess);
 		}
 	}
 	return color;	
@@ -132,6 +118,8 @@ float shlicksFormula(float ior, vec3 l, vec3 v) {
 //Gets the Normal of the Object
 vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
 	vec3 norm = vec3(0, 0, 0);
+	mat4 n = transpose(o.at(i)->model);
+
 	//It's a Sphere
 	if(o.at(i)->type == 1) {
 		norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
@@ -148,7 +136,7 @@ vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
 		norm = normalize(cross(P1, P2));
 	}
 	
-	return norm;
+	return n * vec4(norm.x, norm.y, norm.z, 0.0);
 }
 
 vec3 getRefractVector(float sneil_ratio, vec3 dir, vec3 norm) {
@@ -185,10 +173,11 @@ vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object 
 		// Doe some basic setup for variables
 		sneil_ratio = 1.0f/o.at(index)->ior;
 		vec3 p = origin + dir * T;
-		vec3 norm = getNormal(o, index, p);
+		vec3 p_trans = o.at(index)->model * vec4(origin.x, origin.y, origin.z, 1.0) + o.at(index)->model * vec4(dir.x, dir.y, dir.z, 0.0) * T;
+		vec3 norm = normalize(getNormal(o, index, p_trans));
 		//Checks What method to use
 		if(brdf == 0) {
-			color = blinn_phong(origin, l, o, T, index, width, height, x, y, dir);
+			color = blinn_phong(origin, l, o, T, index, width, height, x, y, dir, norm);
 			if(mode == 1) {
 				cout << "BRDF: Blinn-Phong" << endl;
 			}
@@ -212,16 +201,18 @@ vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object 
 
 		//Refraction
 		if(o.at(index)->refraction >= 0 && iterations < 6) {
+			float dist = 0;
 			if(dot(dir, norm) > 0) {
 				norm = -norm;
 				sneil_ratio = o.at(index)->ior;
+				dist = T;
 			}
 
 		
 			vec3 refraction_vector = (sneil_ratio) * (dir - dot(dir, norm) * norm) - norm * sqrt(1 - pow(sneil_ratio,2) * (1 - pow(dot(dir, -norm), 2)));	
 
 			//Beers Law
-			vec3 absorbance = (1.f - o.at(index)->color) * .15f * -T;
+			vec3 absorbance = (1.f - o.at(index)->color) * .15f * -dist;
 			vec3 attenuation = vec3(pow(M_E, absorbance.r), pow(M_E, absorbance.g), pow(M_E, absorbance.b));
 
 			refraction_color = pixelColor(refraction_vector, (p - norm *.001f), l, o, width, height, x, y, brdf, mode, iterations + 1) * attenuation;

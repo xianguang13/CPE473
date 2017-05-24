@@ -22,6 +22,19 @@ vec3 pixelray (Camera *c, int width, int height, int x, int y, int mode) {
 	return pixel;
 }
 
+vec3 newpixelray (Camera *c, int width, int height, int x, int y, int mode, int i, int j, int superS) {
+	vec3 pixel;
+	vec3 right = (-.5f + ((x + (j + .5f) / superS) / (width))) * c->right;
+	vec3 up = (-.5f + ((y + (i + .5f) / superS) / (height))) * c->up;
+	vec3 ray = -1.f * normalize(c->location - c->lookat);
+	pixel = normalize(right + up + ray);
+	if(mode == 1) {
+		cout << std::setprecision(4);
+		cout << "Pixel: [" << x << ", " << y << "] Ray: {" << c->location.x << " " << c->location.y << " " << c->location.z << "} -> {" << pixel.x << " " << pixel.y << " " << pixel.z << "}" << endl;
+	}
+	return pixel;
+}
+
 int hit_tri(vec3 r, vec3 camera, vec3 a, vec3 b, vec3 c, float *T) {
 	//compute temp
 	float A = a.x - b.x;
@@ -59,7 +72,7 @@ int hit_tri(vec3 r, vec3 camera, vec3 a, vec3 b, vec3 c, float *T) {
 }	
 
 
-
+/*
 float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx) {
 	vec3 pixel = pixelray(c, width, height, x, y, mode);
 	int i, index;
@@ -95,16 +108,13 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 		else if(o->at(i)->type == 2) {
 			Plane *ps = dynamic_cast<Plane *>(o->at(i));
 			float denom = dot(pixel, ps->normal);
-			if(denom < 1e-6) {
-				temp = (ps->distance - dot(c->location, ps->normal))/ (dot(pixel, ps->normal));
-				if(temp < T && temp >= 0) {
-					T = temp;
-					index = i;
-				}
+			//if(denom < 1e-6) {
+			temp = (ps->distance - dot(c->location, ps->normal))/ (dot(pixel, ps->normal));
+			if(temp < T && temp >= 0) {
+				T = temp;
+				index = i;
 			}
-			else {
-				continue;
-			}
+			
 		}
 
 		else if(o->at(i)->type == 3) {
@@ -152,18 +162,20 @@ float firsthit (Camera *c, vector<Object*> *o, int width, int height, int x, int
 		return T;
 	}	
 }
+*/
 
 
 float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx) {
 	int i, index;
 	float A, B, C, temp, temp2, T = 99999999;
-	vec3 K;
+	vec3 K, tpixel, torigin;
 	for (i = 0; i < o->size(); i++) {
 		if(o->at(i)->type == 1) {
-			K = origin - dynamic_cast<Sphere *>(o->at(i))->center;
-
-			A = dot(pixel, pixel);
-			B = 2 * dot(pixel, K);
+			tpixel = o->at(i)->model * vec4(pixel.x, pixel.y, pixel.z, 0.0);
+			torigin = o->at(i)->model * vec4(origin.x, origin.y, origin.z, 1.0);
+			K = torigin - dynamic_cast<Sphere *>(o->at(i))->center;
+			A = dot(tpixel, tpixel);
+			B = 2 * dot(tpixel, K);
 			C = dot(K, K) - (dynamic_cast<Sphere *>(o->at(i))->radius * dynamic_cast<Sphere *>(o->at(i))->radius);
 			
 			float desc =  B * B - 4 * A * C;
@@ -188,15 +200,11 @@ float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int heigh
 		else if(o->at(i)->type == 2) {
 			Plane *ps = dynamic_cast<Plane *>(o->at(i));
 			float denom = dot(pixel, ps->normal);
-			if(denom < 1e-6) {
-				temp = (ps->distance - dot(origin, ps->normal))/ (dot(pixel, ps->normal));
-				if(temp < T && temp >= 0) {
-					T = temp;
-					index = i;
-				}
-			}
-			else {
-				continue;
+			//if(denom < 1e-6) {
+			temp = (ps->distance - dot(origin, ps->normal))/ (dot(pixel, ps->normal));
+			if(temp < T && temp >= 0) {
+				T = temp;
+				index = i;
 			}
 		}
 

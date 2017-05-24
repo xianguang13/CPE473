@@ -8,6 +8,8 @@
 
 //Globals
 using namespace std;
+using namespace glm;
+
 Camera myCamera;
 vector<Light> myLight;
 vector<Object *> myObject;
@@ -19,7 +21,8 @@ void getPlane(FILE *fp, Plane *newPlane) {
 	char buff[255];
 	char *token;
 	float x, y, z;
-	for(i = 0; i < 2; i++) {
+	newPlane->model = mat4(1.f);
+	for(i = 0; i < 5; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
@@ -68,6 +71,23 @@ void getPlane(FILE *fp, Plane *newPlane) {
 				}
 			}
 		}
+		/*
+		else if(strcmp(token, "scale") == 0) {
+			newPlane->scale.x = atof(strtok(NULL, delim));
+			newPlane->scale.y = atof(strtok(NULL, delim));
+			newPlane->scale.z = atof(strtok(NULL, delim));
+		}
+		else if(strcmp(token, "rotate") == 0) {
+			newPlane->rotate.x = atof(strtok(NULL, delim));
+			newPlane->rotate.y = atof(strtok(NULL, delim));
+			newPlane->rotate.z = atof(strtok(NULL, delim));
+		}
+		else if(strcmp(token, "translate") == 0) {
+			newPlane->translate.x = atof(strtok(NULL, delim));
+			newPlane->translate.y = atof(strtok(NULL, delim));
+			newPlane->translate.z = atof(strtok(NULL, delim));
+		}
+		*/
 	}
 }
 
@@ -76,7 +96,7 @@ void getTriangle(FILE *fp, Triangle *newT) {
 	char buff[255];
 	char *token;
 	float x, y, z;
-	for(i = 0; i < 6; i++) {
+	for(i = 0; i < 9; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
@@ -141,6 +161,24 @@ void getTriangle(FILE *fp, Triangle *newT) {
 				}
 			}
 		}
+		/*
+		else if(strcmp(token, "scale") == 0) {
+			newT->scale.x = atof(strtok(NULL, delim));
+			newT->scale.y = atof(strtok(NULL, delim));
+			newT->scale.z = atof(strtok(NULL, delim));
+		}
+
+		else if(strcmp(token, "rotate") == 0) {
+			newT->rotate.x = atof(strtok(NULL, delim));
+			newT->rotate.y = atof(strtok(NULL, delim));
+			newT->rotate.z = atof(strtok(NULL, delim));
+		}
+		else if(strcmp(token, "translate") == 0) {
+			newT->translate.x = atof(strtok(NULL, delim));
+			newT->translate.y = atof(strtok(NULL, delim));
+			newT->translate.z = atof(strtok(NULL, delim));
+		}
+		*/
 	}
 }
 
@@ -149,7 +187,8 @@ void getSphere(FILE *fp, Sphere *newSphere) {
 	char buff[255];
 	char *token;
 	float x, y, z;
-	for(i = 0; i < 3; i++) {
+	newSphere->model = mat4(1.0f);
+	for(i = 0; i < 8; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
@@ -199,21 +238,43 @@ void getSphere(FILE *fp, Sphere *newSphere) {
 			newSphere->set_ambient(x);
 			newSphere->set_diffuse(y);
 		}
+
 		else if(strcmp(token, "translate") == 0) {
+			x = y = z = 0;
 			x = atof(strtok(NULL, delim));
 			y = atof(strtok(NULL, delim));
 			z = atof(strtok(NULL, delim));
-			newSphere->set_translate(x, y, z);
+
+			newSphere->model = translate(mat4(1.f), vec3(x, y, z)) * newSphere->model;
+		}
+
+		else if(strcmp(token, "rotate") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newSphere->model = rotate(mat4(1.f), radians(z), vec3(0, 0, 1)) * newSphere->model;
+			newSphere->model = rotate(mat4(1.f), radians(y), vec3(0, 1, 0)) * newSphere->model;
+			newSphere->model = rotate(mat4(1.f), radians(x), vec3(1, 0, 0)) * newSphere->model;
+		}
+
+		else if(strcmp(token, "scale") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newSphere->model = scale(mat4(1.f), vec3(x, y, z)) * newSphere->model;
 		}
 	}
+	newSphere->model = inverse(newSphere->model);
 }
 
-void getCamera(FILE *fp) {
+void getCamera(FILE *fp, int itr) {
 	char buff[255];
 	char *token;
 	int i = 0;
 	float x, y, z;
-	for(i = 0; i < 4; i++) {
+	for(i = 0; i < itr; i++) {
 		fgets(buff, sizeof(buff), fp);
 		if(strlen(buff) < 2) {
 			break;
@@ -222,6 +283,7 @@ void getCamera(FILE *fp) {
 		x = atof(strtok(NULL, delim));
 		y = atof(strtok(NULL, delim));
 		z = atof(strtok(NULL, delim));
+
 		if(strcmp(token, "location") == 0) {
 			myCamera.set_location(x, y, z);
 		}
@@ -260,7 +322,18 @@ void parse(char *filename) {
 		else {
 			token = strtok(buff, delim);
 			if(strcmp(token, "camera") == 0) {
-				getCamera(fp);
+				float tempx, tempy, tempz;
+				token = strtok(NULL, delim);
+				if(strcmp(token, "location") == 0) {
+					tempx = atof(strtok(NULL, delim));
+					tempy = atof(strtok(NULL, delim));
+					tempz = atof(strtok(NULL, delim));
+					myCamera.set_location(tempx, tempy, tempz);
+					getCamera(fp, 3);
+				}
+				else {
+					getCamera(fp, 4);
+				}
 			}
 
 			else if(strcmp(token, "light_source") == 0) {

@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <iostream>
 #include <string.h>
 #include "parser.cpp"
 #include "render.h"
@@ -7,7 +9,11 @@
 #include "pixelcolor.h"
 
 int main(int argc, char *argv[]) {
-	int mode = 0;
+	int blinn = 0;
+	int fresnel = 0;
+	int superS = 0;
+	char *token;
+	const char delimiter[2] = "=";
 	parse(argv[2]);
 
 
@@ -22,13 +28,26 @@ int main(int argc, char *argv[]) {
 		//firsthit(&myCamera, &myObject, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 1);
 	}
 	else if(strcmp(argv[1], "render") == 0) {
-		mode = 0;
-		if(argc == 6) {
-			if(strcmp(argv[5], "-altbrdf") == 0) {
-				mode = 1;
+		blinn = 0;
+		int temp = argc;
+		temp = temp - 6;
+		string s = (string) argv[temp + 5];
+		while(temp >= 0) {
+			if(strcmp(argv[temp + 5], "-altbrdf") == 0) {
+				blinn = 1;
 			}
+			else if(strcmp(argv[temp + 5], "-fresnel") == 0) {
+				fresnel = 1;
+			}
+			else if(s.substr(0, 4).compare("-ss=") == 0) {
+				token = strtok(argv[temp + 5], delimiter);
+				token = strtok(NULL, delimiter);
+				//fprintf(stderr, "%s", token);
+				superS = atoi(token);
+			}
+			temp--;
 		}
-		render(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), mode, 0); 
+		render(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), blinn, fresnel, superS, 0); 
 	}
 	
 	else if(strcmp(argv[1], "pixelcolor") == 0) {
@@ -52,5 +71,6 @@ int main(int argc, char *argv[]) {
 		printf("Usage: ./a.out pixelray <input_filename> <width> <height> <x> <y>\n");
 		printf("Usage: ./a.outrender <input_filename><width><height>\n");
 	}
+
 	return 1;
 }

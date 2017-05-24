@@ -8,7 +8,7 @@
 using namespace std;
 using namespace glm;
 
-void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height, int brdf, int mode) {
+void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height, int brdf, int fresnel, int superS, int mode) {
 	const int numChannels = 3;
 	const string fileName = "output.png";
 	const ivec2 size = ivec2(640, 480);
@@ -17,9 +17,22 @@ void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height
 	
 	for(int y = 0; y  < height; y++) {
 		for(int x = 0; x < width; x++) {
-			vec3 pixRay = pixelray(&c, width, height, x, y, 0);
-			glm::vec3 color = pixelColor(pixRay, c.location, l, o, width, height, x, y, brdf, mode, 0);
-		 
+			vec3 pixRay, color;
+			if(!superS) {
+				pixRay = pixelray(&c, width, height, x, y, 0);
+				color = pixelColor(pixRay, c.location, l, o, width, height, x, y, brdf, mode, 0);
+			}
+			else if(superS) {
+				for(int i = 0; i < superS; i++) {
+					for(int j = 0; j < superS; j++) {
+						pixRay = newpixelray(&c, width, height, x, y, 0, i, j, superS);
+						color += pixelColor(pixRay, c.location, l, o, width, height, x, y, brdf, mode, 0);
+					}
+				}
+
+				color = vec3(color.r / (superS * superS), color.g / (superS * superS), color.b / (superS * superS));
+			}
+
 			unsigned char red = std::min(255u, (unsigned int) round(color.r * 255.f));
 			unsigned char green = std::min(255u, (unsigned int) round(color.g * 255.f));
 			unsigned char blue = std::min(255u, (unsigned int) round(color.b * 255.f));

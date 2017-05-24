@@ -60,12 +60,6 @@ void Sphere::set_diffuse (float x) {
 	diffuse = x;
 }
 
-void Sphere::set_translate(float x, float y, float z) {
-	translate.x = x;
-	translate.y = y;
-	translate.z = z;
-}
-
 void Plane::set_normal(float x, float y, float z) {
 	normal.x = x;
 	normal.y = y;

@@ -40,14 +40,13 @@ class Object {
 		float refraction;
 		float filter;
 		glm::vec3 color;
-		
+		glm::mat4 model;
 };
 
 class Sphere: public Object{
    public:
       glm::vec3 center;
       float radius;
-		glm::vec3 translate;
 
 		void set_center(float, float, float);
 		void set_color(float, float, float);
