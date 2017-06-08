@@ -19,6 +19,7 @@ const char *delim = "	 <>,{}";
 void getPlane(FILE *fp, Plane *newPlane) {
 	int i;
 	char buff[255];
+	newPlane->model = mat4(1.0f);
 	char *token;
 	float x, y, z;
 	newPlane->model = mat4(1.f);
@@ -39,6 +40,7 @@ void getPlane(FILE *fp, Plane *newPlane) {
 				newPlane->filter = x;
 			}
 		}
+
 		else if(strcmp(token, "finish") == 0) {
 			newPlane->roughness = 0.7f;
 			newPlane->metallic = 0.1f;
@@ -71,29 +73,41 @@ void getPlane(FILE *fp, Plane *newPlane) {
 				}
 			}
 		}
-		/*
-		else if(strcmp(token, "scale") == 0) {
-			newPlane->scale.x = atof(strtok(NULL, delim));
-			newPlane->scale.y = atof(strtok(NULL, delim));
-			newPlane->scale.z = atof(strtok(NULL, delim));
-		}
-		else if(strcmp(token, "rotate") == 0) {
-			newPlane->rotate.x = atof(strtok(NULL, delim));
-			newPlane->rotate.y = atof(strtok(NULL, delim));
-			newPlane->rotate.z = atof(strtok(NULL, delim));
-		}
+
 		else if(strcmp(token, "translate") == 0) {
-			newPlane->translate.x = atof(strtok(NULL, delim));
-			newPlane->translate.y = atof(strtok(NULL, delim));
-			newPlane->translate.z = atof(strtok(NULL, delim));
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+
+			newPlane->model = translate(mat4(1.f), vec3(x, y, z)) * newPlane->model;
 		}
-		*/
+
+		else if(strcmp(token, "rotate") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newPlane->model = rotate(mat4(1.f), radians(z), vec3(0, 0, 1)) * newPlane->model;
+			newPlane->model = rotate(mat4(1.f), radians(y), vec3(0, 1, 0)) * newPlane->model;
+			newPlane->model = rotate(mat4(1.f), radians(x), vec3(1, 0, 0)) * newPlane->model;
+		}
+
+		else if(strcmp(token, "scale") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newPlane->model = scale(mat4(1.f), vec3(x, y, z)) * newPlane->model;
+		}
 	}
+	newPlane->model = inverse(newPlane->model);
 }
 
 void getTriangle(FILE *fp, Triangle *newT) {
 	int i;
 	char buff[255];
+	newT->model = mat4(1.0f);
 	char *token;
 	float x, y, z;
 	for(i = 0; i < 9; i++) {
@@ -161,26 +175,124 @@ void getTriangle(FILE *fp, Triangle *newT) {
 				}
 			}
 		}
-		/*
-		else if(strcmp(token, "scale") == 0) {
-			newT->scale.x = atof(strtok(NULL, delim));
-			newT->scale.y = atof(strtok(NULL, delim));
-			newT->scale.z = atof(strtok(NULL, delim));
+
+		else if(strcmp(token, "translate") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+
+			newT->model = translate(mat4(1.f), vec3(x, y, z)) * newT->model;
 		}
 
 		else if(strcmp(token, "rotate") == 0) {
-			newT->rotate.x = atof(strtok(NULL, delim));
-			newT->rotate.y = atof(strtok(NULL, delim));
-			newT->rotate.z = atof(strtok(NULL, delim));
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newT->model = rotate(mat4(1.f), radians(z), vec3(0, 0, 1)) * newT->model;
+			newT->model = rotate(mat4(1.f), radians(y), vec3(0, 1, 0)) * newT->model;
+			newT->model = rotate(mat4(1.f), radians(x), vec3(1, 0, 0)) * newT->model;
 		}
-		else if(strcmp(token, "translate") == 0) {
-			newT->translate.x = atof(strtok(NULL, delim));
-			newT->translate.y = atof(strtok(NULL, delim));
-			newT->translate.z = atof(strtok(NULL, delim));
+
+		else if(strcmp(token, "scale") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newT->model = scale(mat4(1.f), vec3(x, y, z)) * newT->model;
 		}
-		*/
 	}
+	newT->model = inverse(newT->model);
 }
+
+void getBox(FILE *fp, Box *newBox) {
+	int i, marker = 0;
+	char buff[255];
+	char *token;
+	float x, y, z;
+	newBox->model = mat4(1.0f);
+	
+	for(i = 0; i < 8; i++) {
+		fgets(buff, sizeof(buff), fp);
+		if(strlen(buff) < 2) {
+			break;
+		}
+		token = strtok(buff, delim);
+		if(strcmp(token, "pigment") == 0) {
+			strtok(NULL, delim);
+			strtok(NULL, delim);
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newBox->color = vec3(x, y, z);
+			if(x = atof(strtok(NULL, delim))) {
+				newBox->filter = x;
+			}
+		}
+		else if(strcmp(token, "finish") == 0) {
+			strtok(NULL,delim);
+			x = atof(strtok(NULL, delim));
+			strtok(NULL, delim);
+			y = atof(strtok(NULL, delim));
+			
+			newBox->roughness = 0.7f;
+			newBox->metallic = 0.1f;
+			newBox->ior = 1.6f;
+
+			while(token = strtok(NULL, delim)) {
+				if(strcmp(token, "specular") == 0) {
+					newBox->specular = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "roughness") == 0) {
+					newBox->roughness = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "metallic") == 0) {
+					newBox->metallic = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "ior") == 0) {
+					newBox->ior = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "reflection") == 0) {
+					newBox->reflection = atof(strtok(NULL, delim));
+				}
+				else if(strcmp(token, "refraction") == 0) {
+					newBox->refraction = atof(strtok(NULL, delim));
+				}
+			}
+			newBox->ambient = x;
+			newBox->diffuse = y;
+		}
+
+		else if(strcmp(token, "translate") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+
+			newBox->model = translate(mat4(1.f), vec3(x, y, z)) * newBox->model;
+		}
+
+		else if(strcmp(token, "rotate") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newBox->model = rotate(mat4(1.f), radians(z), vec3(0, 0, 1)) * newBox->model;
+			newBox->model = rotate(mat4(1.f), radians(y), vec3(0, 1, 0)) * newBox->model;
+			newBox->model = rotate(mat4(1.f), radians(x), vec3(1, 0, 0)) * newBox->model;
+		}
+
+		else if(strcmp(token, "scale") == 0) {
+			x = y = z = 0;
+			x = atof(strtok(NULL, delim));
+			y = atof(strtok(NULL, delim));
+			z = atof(strtok(NULL, delim));
+			newBox->model = scale(mat4(1.f), vec3(x, y, z)) * newBox->model;
+		}
+	}
+	newBox->model = inverse(newBox->model);
+}	
 
 void getSphere(FILE *fp, Sphere *newSphere) {
 	int i, marker = 0;
@@ -386,6 +498,22 @@ void parse(char *filename) {
 				getTriangle(fp, newTriang);
 				myObject.push_back(newTriang);
 			}
+
+			else if(strcmp(token, "box") == 0) {
+				Object *o = new Box;
+				Box *newBox = dynamic_cast<Box *> (o);
+				newBox->type = 4;
+				x = atof(strtok(NULL, delim));
+				y = atof(strtok(NULL, delim));
+				z = atof(strtok(NULL, delim));
+				newBox->min = vec3(x, y, z);
+				x = atof(strtok(NULL, delim));
+				y = atof(strtok(NULL, delim));
+				z = atof(strtok(NULL, delim));
+				newBox->max = vec3(x, y, z);
+				getBox(fp, newBox);
+				myObject.push_back(newBox);
+			}
 		}
 	}
 }
@@ -436,6 +564,11 @@ void printAll() {
 			printf("- Material:\n");
 			cout << "  - Ambient: " <<  dynamic_cast<Triangle *>(myObject.at(i))->ambient << endl;
 			cout << "  - Diffuse: " <<  dynamic_cast<Triangle *>(myObject.at(i))->diffuse << endl;
+		}
+		else if(myObject.at(i)->type == 4) {
+			printf("- Type: Box\n");
+			cout << "min.x " << dynamic_cast<Box *>(myObject.at(i))->min.x << " min.y " << dynamic_cast<Box *> (myObject.at(i))->min.y << " min.z " << dynamic_cast<Box *>(myObject.at(i))->min.z << endl;
+			cout << "max.x " << dynamic_cast<Box *>(myObject.at(i))->max.x << " max.y " << dynamic_cast<Box *> (myObject.at(i))->max.y << " max.z " << dynamic_cast<Box *>(myObject.at(i))->max.z << endl;
 		}
 	}
 }

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/epsilon.hpp>
 
 class Camera {
    public:
@@ -78,4 +79,11 @@ class Triangle: public Object {
 		void set_p2(float, float, float);
 		void set_p3(float, float, float);
 		void set_color(float, float, float);
+};
+
+class Box: public Object {
+	public:
+		glm::vec3 min;
+		glm::vec3 max;
+
 };

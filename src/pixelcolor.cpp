@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <string>
 #include <iomanip>
 #include <math.h>
 #include <vector>
+#include <limits>
 
 #include "data.h"
 #include "pixelray.h"
@@ -19,6 +21,47 @@ bool checkShad(vec3 origin, vector<Object *> o, int width, int height, int x, in
 		return true;
 	else
 		return false;
+}
+
+//Gets the Normal of the Object
+vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
+	vec3 norm = vec3(0, 0, 0);
+	mat4 n = transpose(o.at(i)->model);
+
+	//It's a Sphere
+	if(o.at(i)->type == 1) {
+		norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
+	}
+	//It's a Plane
+	else if(o.at(i)->type == 2) {
+		norm = dynamic_cast<Plane*>(o.at(i))->normal;
+	}
+	//It's a Triangle		
+	else if(o.at(i)->type == 3) {
+		Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
+		vec3 P1 = tempT->p3 - tempT->p1;
+		vec3 P2 = tempT->p2 - tempT->p1;
+		norm = normalize(cross(P1, P2));
+	}
+
+	//It's a Box
+	else if(o.at(i)->type == 4) {
+		Box *b = dynamic_cast<Box *>(o.at(i));
+		if(epsilonEqual(p.x, b->min.x, 0.0001f))
+			norm = vec3(-1, 0, 0);
+		else if(epsilonEqual(p.x, b->max.x, 0.0001f))
+			norm = vec3(1, 0, 0);
+		else if(epsilonEqual(p.y, b->min.y, 0.0001f))
+			norm = vec3(0, -1, 0);
+		else if(epsilonEqual(p.y, b->max.y, 0.0001f))
+			norm = vec3(0, 1, 0);
+		else if(epsilonEqual(p.z, b->min.z, 0.0001f))
+			norm = vec3(0, 0, -1);
+		else if(epsilonEqual(p.z, b->max.z, 0.0001f))
+			norm = vec3(0, 0, 1);
+	}
+	
+	return n * vec4(norm.x, norm.y, norm.z, 0.0);
 }
 
 vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay, vec3 n) {
@@ -65,22 +108,8 @@ vec3 cook_tor(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, in
 
 		//CHECKU SHADOWU
 		if(checkShad((p + lightDir * 0.1f), o, width, height, x, y, lightDir, glm::distance(l.at(j).location, p))) {
-			//It's a Sphere
-			if(o.at(i)->type == 1) {
-				norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
-			}
-			//It's a Plane
-			else if(o.at(i)->type == 2) {
-				norm = dynamic_cast<Plane*>(o.at(i))->normal;
-			}
-			
-			else if(o.at(i)->type == 3) {
+			norm = getNormal(o, i, p);
 
-				Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
-				vec3 P1 = tempT->p3 - tempT->p1;
-				vec3 P2 = tempT->p2 - tempT->p1;
-				norm = normalize(cross(P1, P2));
-			}
 
 			vec3 h = normalize(lightDir + normalize(-pxRay));
 			float shine = 2/pow(o.at(i)->roughness, 2) - 2;
@@ -113,30 +142,6 @@ float shlicksFormula(float ior, vec3 l, vec3 v) {
 	float f1 = pow(ior - 1, 2) / pow(ior + 1, 2);
 	float F = f1 + (1 - f1) * pow((1 - dot(-l, v)), 5);
 	return F;
-}
-
-//Gets the Normal of the Object
-vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
-	vec3 norm = vec3(0, 0, 0);
-	mat4 n = transpose(o.at(i)->model);
-
-	//It's a Sphere
-	if(o.at(i)->type == 1) {
-		norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
-	}
-	//It's a Plane
-	else if(o.at(i)->type == 2) {
-		norm = dynamic_cast<Plane*>(o.at(i))->normal;
-	}
-	//It's a Triangle		
-	else if(o.at(i)->type == 3) {
-		Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
-		vec3 P1 = tempT->p3 - tempT->p1;
-		vec3 P2 = tempT->p2 - tempT->p1;
-		norm = normalize(cross(P1, P2));
-	}
-	
-	return n * vec4(norm.x, norm.y, norm.z, 0.0);
 }
 
 vec3 getRefractVector(float sneil_ratio, vec3 dir, vec3 norm) {
