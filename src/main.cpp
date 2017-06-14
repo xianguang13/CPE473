@@ -12,6 +12,8 @@ int main(int argc, char *argv[]) {
 	int blinn = 0;
 	int fresnel = 0;
 	int superS = 0;
+	int sds = 0;
+	int gi = 0;
 	char *token;
 	const char delimiter[2] = "=";
 	parse(argv[2]);
@@ -21,7 +23,7 @@ int main(int argc, char *argv[]) {
 		printAll();
 	}
 	else if(argc == 7 && strcmp(argv[1], "pixelray") == 0) {
-		pixelray(&myCamera, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 1);
+		PixelRay(&myCamera, atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), 1);
 	}
 	else if(argc == 7 && strcmp(argv[1], "firsthit") == 0) {
 		cout << "Not Testable atm" << endl;
@@ -45,9 +47,17 @@ int main(int argc, char *argv[]) {
 				//fprintf(stderr, "%s", token);
 				superS = atoi(token);
 			}
+			else if(strcmp(argv[temp + 5], "-sds") == 0) {
+				sds = 1;
+				cout << "Spacial Data Structures" << endl;
+			}
+			else if(strcmp(argv[temp + 5], "-gi") == 0) {
+				gi = 1;
+				cout << "Doing Monte Carlo" << endl;
+			}
 			temp--;
 		}
-		render(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), blinn, fresnel, superS, 0); 
+		render(myCamera, myLight, myObject, atoi(argv[3]), atoi(argv[4]), blinn, fresnel, superS, sds, gi, 0); 
 	}
 	
 	else if(strcmp(argv[1], "pixelcolor") == 0) {

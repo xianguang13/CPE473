@@ -9,7 +9,7 @@
 using namespace glm;
 using namespace std;
 
-vec3 pixelray (Camera *c, int width, int height, int x, int y, int mode) {
+vec3 PixelRay (Camera *c, int width, int height, int x, int y, int mode) {
 	vec3 pixel;
 	vec3 right = (-.5f + ((x + .5f) / (width))) * c->right;
 	vec3 up = (-.5f + ((y + .5f) / (height))) * c->up;
@@ -99,7 +99,7 @@ void boxFirstHit(vec3 origin, Box *myB, vec3 pixel, float *t, int ind, int *inde
 
 	float t1, t2;
 	float tgmin = -99999999;
-	float tgmax = 99999999;
+	float tgmax = numeric_limits<float>::max();
 
 	if(pixel.x != 0) {
 		if(pixel.x == 0 && (origin.x >= myB->min.x || origin.x <= myB->max.x))
@@ -137,10 +137,12 @@ void boxFirstHit(vec3 origin, Box *myB, vec3 pixel, float *t, int ind, int *inde
 	}
 }
 
-float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx) {
+Object* checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int height, int x, int y, int mode, int *indx, float *T) {
 	int i, index;
-	float A, B, C, temp, temp2, T = 99999999;
+	float A, B, C, temp, temp2;
+	*T = numeric_limits<float>::max();
 	vec3 K, tpixel, torigin;
+	index = -1;
 	for (i = 0; i < o->size(); i++) {
 		// Sphere First Hit
 		if(o->at(i)->type == 1) {
@@ -161,8 +163,8 @@ float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int heigh
 					temp = temp2;
 				}
 
-				if(temp < T && temp > 0) {
-					T = temp;
+				if(temp < *T && temp > 0) {
+					*T = temp;
 					index = i;
 				}
 			}
@@ -175,31 +177,34 @@ float checkHit(vec3 pixel, vec3 origin, vector<Object*> *o, int width, int heigh
 			Plane *ps = dynamic_cast<Plane *>(o->at(i));
 			float denom = dot(pixel, ps->normal);
 			temp = (ps->distance - dot(origin, ps->normal))/ (dot(pixel, ps->normal));
-			if(temp < T && temp >= 0) {
-				T = temp;
+			if(temp < *T && temp >= 0) {
+				*T = temp;
 				index = i;
 			}
 		}
 		// Triangle First Hit
 		else if(o->at(i)->type == 3) {
 			Triangle *myT = dynamic_cast<Triangle *>(o->at(i));
-			if(hit_tri(pixel, origin, myT->p1, myT->p2, myT->p3, &T)) {
+			if(hit_tri(pixel, origin, myT->p1, myT->p2, myT->p3, T)) {
 				index = i;
 			}
 		}
 		// Box First Hit
 		else if(o->at(i)->type == 4) {
 			Box *myB = dynamic_cast<Box *>(o->at(i));
-			boxFirstHit(origin, myB, pixel, &T, i, &index);
+			boxFirstHit(origin, myB, pixel, T, i, &index);
 		}
 	}
 
-	if(T != 99999999) {
+	if(*T != numeric_limits<float>::max()) {
 		*indx = index;
 	}
 	else {
 		*indx = -1;
+		Object *nullObj = new Object;
+		nullObj->type = 1000;
+		return nullObj;
 	}
-	return T;	
+	return o->at(index);
 }
 

@@ -6,7 +6,7 @@
 #include <math.h>
 #include <vector>
 #include <limits>
-
+#include "sds.h"
 #include "data.h"
 #include "pixelray.h"
 
@@ -15,38 +15,39 @@ using namespace std;
 
 bool checkShad(vec3 origin, vector<Object *> o, int width, int height, int x, int y, vec3 lightDir, float d) {
 	int index; 
-	float T = checkHit(lightDir, origin, &o, width, height, x, y, 0, &index);
+	float T = numeric_limits<float>::max();
+	checkHit(lightDir, origin, &o, width, height, x, y, 0, &index, &T);
 
-	if(index == -1 | T > d)
+	if(index == -1 || T > d)
 		return true;
 	else
 		return false;
 }
 
 //Gets the Normal of the Object
-vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
+vec3 getNormal(Object *o, vec3 p) {
 	vec3 norm = vec3(0, 0, 0);
-	mat4 n = transpose(o.at(i)->model);
+	mat4 n = transpose(o->model);
 
 	//It's a Sphere
-	if(o.at(i)->type == 1) {
-		norm = normalize(p - dynamic_cast<Sphere*>(o.at(i))->center);
+	if(o->type == 1) {
+		norm = normalize(p - dynamic_cast<Sphere*>(o)->center);
 	}
 	//It's a Plane
-	else if(o.at(i)->type == 2) {
-		norm = dynamic_cast<Plane*>(o.at(i))->normal;
+	else if(o->type == 2) {
+		norm = dynamic_cast<Plane*>(o)->normal;
 	}
 	//It's a Triangle		
-	else if(o.at(i)->type == 3) {
-		Triangle *tempT = dynamic_cast<Triangle *>(o.at(i));
+	else if(o->type == 3) {
+		Triangle *tempT = dynamic_cast<Triangle *>(o);
 		vec3 P1 = tempT->p3 - tempT->p1;
 		vec3 P2 = tempT->p2 - tempT->p1;
-		norm = normalize(cross(P1, P2));
+		norm = normalize(cross(P2, P1));
 	}
 
 	//It's a Box
-	else if(o.at(i)->type == 4) {
-		Box *b = dynamic_cast<Box *>(o.at(i));
+	else if(o->type == 4) {
+		Box *b = dynamic_cast<Box *>(o);
 		if(epsilonEqual(p.x, b->min.x, 0.0001f))
 			norm = vec3(-1, 0, 0);
 		else if(epsilonEqual(p.x, b->max.x, 0.0001f))
@@ -64,15 +65,15 @@ vec3 getNormal(std::vector<Object *> o, int i, vec3 p) {
 	return n * vec4(norm.x, norm.y, norm.z, 0.0);
 }
 
-vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay, vec3 n) {
-	vec3 color;
+vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o,
+float T, int i, int width, int height, int x, int y, vec3 pxRay, vec3 n, vec3 *color) {
 
 	//Solve point
 	vec3 p = c + pxRay * T; 
 	pxRay = o.at(i)->model * vec4(pxRay.x, pxRay.y, pxRay.z, 0.0);
 	
 	//Ambient
-	color = o.at(i)->color * o.at(i)->ambient;
+	//color = o.at(i)->color * o.at(i)->ambient;
 
 	//Calculate for all Lights
 	for (unsigned int j = 0; j < l.size(); j++) {
@@ -82,15 +83,15 @@ vec3 blinn_phong(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T,
 		if(checkShad((p + lightDir * 0.1f), o, width, height, x, y, lightDir, glm::distance(l.at(j).location, p))) {
 
 			//Diffuse
-			color += o.at(i)->color * o.at(i)->diffuse * l.at(j).color * glm::max(0.f, dot(n, lightDir));
+			*color += o.at(i)->color * o.at(i)->diffuse * l.at(j).color * glm::max(0.f, dot(n, lightDir));
 
 			//Specular
 			vec3 h = normalize(lightDir + normalize(-pxRay));
 			float shininess = 2/pow(o.at(i)->roughness,2) - 2;
-			color += o.at(i)->color * o.at(i)->specular * l.at(j).color * pow(glm::max(0.f, dot(h, n)), shininess);
+			*color += o.at(i)->color * o.at(i)->specular * l.at(j).color * pow(glm::max(0.f, dot(h, n)), shininess);
 		}
 	}
-	return color;	
+	return *color;	
 }	
 
 vec3 cook_tor(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, int i, int width, int height, int x, int y, vec3 pxRay) {
@@ -108,7 +109,7 @@ vec3 cook_tor(vec3 c, std::vector<Light> l, std::vector<Object *> o, float T, in
 
 		//CHECKU SHADOWU
 		if(checkShad((p + lightDir * 0.1f), o, width, height, x, y, lightDir, glm::distance(l.at(j).location, p))) {
-			norm = getNormal(o, i, p);
+			norm = getNormal(o.at(i), p);
 
 
 			vec3 h = normalize(lightDir + normalize(-pxRay));
@@ -156,60 +157,112 @@ void printRecurse(vec3 dir, Object *o, int i, float t, vec3 n, vec3 p) {
    cout << endl << endl;
 }
 
+vec3 generateSamplePoints() {
+	float u = rand() / (float) RAND_MAX;
+	float v = rand() / (float) RAND_MAX;
+
+	float radial = sqrt(u);
+	float theta = 2.0 * M_PI * v;
+	float x = radial * cos(theta);
+	float y = radial * sin(theta);
+
+	return vec3(x, y, sqrt(1 - u));
+}
+
+vec3 alignSampleVector(vec3 pt, vec3 up, vec3 normal) {
+	float angle = acos(dot(up, normal));
+	vec3 axis;
+	if(up != normal)
+		axis = cross(up, normal);
+	else
+		axis = normal;
+
+	mat4 m = rotate(mat4(1.f), angle, axis);
+
+	return vec3(m * vec4(pt, 0.0));
+}
+
 /** Pixel Color
  * Discription:
  *	Command casts a ray in the scene found in input_file and for pixel (x, y)
  *	finds first object it hits. It then computes the shaded color for the pixel
  *	indicated via BRDF.
  **/
-vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object *> o, int width, int height, int x, int y, int brdf, int mode, int iterations) {
+vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l,
+std::vector<Object *> o, int width, int height, int x,
+int y, int brdf, int mode, int iterations, bvh_node *bn,
+int flagSDS, int gi, int bounces, int N) {
+
 	int index;
 	vec3 color = vec3(0, 0, 0);
-	float local_contribution = 1;
-	float reflection_contribution = 1;
-	float transmission_contribution = 1;
+	float local_contribution = 0;
+	float reflection_contribution = 0;
+	float transmission_contribution = 0;
 	//vec3 pixRay = pixelray(&c, width, height, x, y, 0);
-	float T = checkHit(dir, origin, &o, width, height, x, y, mode, &index);
+	float T;
+	Object *hitObj;
 	vec3 reflection_color;
 	vec3 refraction_color;
 	float sneil_ratio;
+	vector<Object *> closest;
+
+	if(flagSDS) {
+		testHit(dir, origin, bn, &closest);
+		T = numeric_limits<float>::max();
+		hitObj = checkHit(dir, origin, &closest, width, height, x, y, mode, &index, &T);
+	}
+	else
+		hitObj = checkHit(dir, origin, &o, width, height, x, y, mode, &index, &T);
+
 	//Hits Something
-	if(index != -1) {
+	if(index != -1 && hitObj->type < 5) {
 		// Doe some basic setup for variables
-		sneil_ratio = 1.0f/o.at(index)->ior;
+		sneil_ratio = 1.0f/hitObj->ior;
 		vec3 p = origin + dir * T;
-		vec3 p_trans = o.at(index)->model * vec4(origin.x, origin.y, origin.z, 1.0) + o.at(index)->model * vec4(dir.x, dir.y, dir.z, 0.0) * T;
-		vec3 norm = normalize(getNormal(o, index, p_trans));
+		vec3 p_trans = hitObj->model * vec4(origin.x, origin.y, origin.z, 1.0) + hitObj->model * vec4(dir.x, dir.y, dir.z, 0.0) * T;
+		vec3 norm = normalize(getNormal(hitObj, p_trans));
+
+		if(gi) {
+			vec3 amb = vec3(0, 0, 0);
+			for(int i = 0; i < N; i++) {
+				if(bounces > 1) {
+					vec3 pt = generateSamplePoints();
+					dir = alignSampleVector(pt, vec3(0, 0, 1), norm);
+					amb += pixelColor(dir, (p+dir * 0.001f), l, o, width, height, x, y, brdf, mode, iterations, bn, flagSDS, gi, bounces - 1, N/8) * dot(dir, norm);
+				}
+			}
+
+			color = hitObj->color * 2.0f / (float) N * amb;
+		}
+
+		else {
+			color = hitObj->color * hitObj->ambient;
+		}
+
 		//Checks What method to use
 		if(brdf == 0) {
-			color = blinn_phong(origin, l, o, T, index, width, height, x, y, dir, norm);
-			if(mode == 1) {
-				cout << "BRDF: Blinn-Phong" << endl;
-			}
+			blinn_phong(origin, l, o, T, index, width, height, x, y, dir, norm, &color);
 		}
 		else if(brdf == 1) {
-			color = cook_tor(origin, l, o, T, index, width, height, x, y, dir);
-			if(mode == 1) {
-				cout << "BRDF: Alternate" << endl;
-			}
+			//cook_tor(origin, l, o, T, index, width, height, x, y, dir, &color);
 		}
 
 		if (mode == 1)
-			printRecurse(dir, o.at(index), index, T, norm, p);
+			printRecurse(dir, hitObj, index, T, norm, p);
 
 		//Check Number of Times
 		//Reflection
-		if(o.at(index)->reflection > 0 && iterations < 6) {
+		if(hitObj->reflection > 0 && iterations < 6) {
 			vec3 reflection_vector = dir - 2 * (dot(dir, norm)) * norm;
-			reflection_color = pixelColor(reflection_vector, (p+norm*.001f), l, o, width, height, x, y, brdf, mode, iterations + 1);
+			reflection_color = pixelColor(reflection_vector, (p+norm*.001f), l, o, width, height, x, y, brdf, mode, iterations + 1, bn, flagSDS, gi, bounces, N);
 		}
 
 		//Refraction
-		if(o.at(index)->refraction >= 0 && iterations < 6) {
+		if(hitObj->refraction >= 0 && iterations < 6) {
 			float dist = 0;
 			if(dot(dir, norm) > 0) {
 				norm = -norm;
-				sneil_ratio = o.at(index)->ior;
+				sneil_ratio = hitObj->ior;
 				dist = T;
 			}
 
@@ -217,16 +270,16 @@ vec3 pixelColor(vec3 dir, vec3 origin, std::vector<Light> l, std::vector<Object 
 			vec3 refraction_vector = (sneil_ratio) * (dir - dot(dir, norm) * norm) - norm * sqrt(1 - pow(sneil_ratio,2) * (1 - pow(dot(dir, -norm), 2)));	
 
 			//Beers Law
-			vec3 absorbance = (1.f - o.at(index)->color) * .15f * -dist;
+			vec3 absorbance = (1.f - hitObj->color) * .15f * -dist;
 			vec3 attenuation = vec3(pow(M_E, absorbance.r), pow(M_E, absorbance.g), pow(M_E, absorbance.b));
 
-			refraction_color = pixelColor(refraction_vector, (p - norm *.001f), l, o, width, height, x, y, brdf, mode, iterations + 1) * attenuation;
+			refraction_color = pixelColor(refraction_vector, (p - norm *.001f), l, o, width, height, x, y, brdf, mode, iterations + 1, bn, flagSDS, gi, bounces, N) * attenuation;
 		}
 
-		float fresnel_reflectance = shlicksFormula(o.at(index)->ior, dir, norm);
-		local_contribution = (1 - o.at(index)->filter) * (1 - o.at(index)->reflection);
-		reflection_contribution = (1 - o.at(index)->filter) * (o.at(index)->reflection) + (o.at(index)->filter) * (fresnel_reflectance);
-		transmission_contribution = (o.at(index)->filter) * (1 - fresnel_reflectance);
+		float fresnel_reflectance = shlicksFormula(hitObj->ior, dir, norm);
+		local_contribution = (1 - hitObj->filter) * (1 - hitObj->reflection);
+		reflection_contribution = (1 - hitObj->filter) * (hitObj->reflection) + (hitObj->filter) * (fresnel_reflectance);
+		transmission_contribution = (hitObj->filter) * (1 - fresnel_reflectance);
 	}
 
 	//If printing mode is on

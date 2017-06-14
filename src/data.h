@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <vector>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
@@ -86,4 +87,10 @@ class Box: public Object {
 		glm::vec3 min;
 		glm::vec3 max;
 
+};
+
+class bvh_node: public Box {
+	public:
+		bvh_node *left, *right;
+		std::vector<Object *> o;
 };
