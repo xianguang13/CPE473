@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+//home/xyan02/CPE473/source/main.cpp
+stdio.h
+-
+stdlib.h
+-
+string
+-
+iostream
+-
+string.h
+-
+parser.cpp
+//home/xyan02/CPE473/source/parser.cpp
+
+//home/xyan02/CPE473/source/parser.cpp
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+vector
+-
+iostream
+-
+iomanip
+-
+

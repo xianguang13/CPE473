@@ -31,14 +31,18 @@ vec3 newpixelray (Camera *c, int width, int height, int x, int y, int mode, int 
 	pixel = normalize(right + up + ray);
 
 	if(df) {
-		float x_aperature = ((rand() % 1000) / (float) 1000);
-		float y_aperature = ((rand() % 1000) / (float) 1000);
+		float r1 = (rand() % RAND_MAX / (float) RAND_MAX) * 2.0f - 1.0f;
+		float r2 = (rand() % RAND_MAX / (float) RAND_MAX) * 2.0f - 1.0f;
 
-		vec3 focal_point = c->location + pixel * (float) df;
-		vec3 newCamLocation = c->location + vec3(x_aperature, y_aperature, 0);
+		vec3 focal_point = normalize(c->location) + pixel * (float) df;
+		vec3 newCamLocation = normalize(c->location + vec3(r1, r2, 0));
 		pixel = normalize(focal_point - newCamLocation);
 	}
 
+	if(mode == 1) {
+		cout << std::setprecision(4);
+		cout << "Pixel: [" << x << ", " << y << "] Ray: {" << c->location.x << " " << c->location.y << " " << c->location.z << "} -> {" << pixel.x << " " << pixel.y << " " << pixel.z << "}" << endl;
+	}
 	return pixel;
 }
 

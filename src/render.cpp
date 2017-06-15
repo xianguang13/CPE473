@@ -10,7 +10,7 @@
 using namespace std;
 using namespace glm;
 
-void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height, int brdf, int fresnel, int superS, int sds, int gi, int mode) {
+void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height, int brdf, int fresnel, int superS, int sds, int gi, int df, int mode) {
 	const int numChannels = 3;
 	const string fileName = "output.png";
 	const ivec2 size = ivec2(width, height);
@@ -33,7 +33,7 @@ void render(Camera c, vector<Light> l, vector<Object *> o, int width, int height
 			else if(superS) {
 				for(int i = 0; i < superS; i++) {
 					for(int j = 0; j < superS; j++) {
-						pixRay = newpixelray(&c, width, height, x, y, 0, i, j, superS);
+						pixRay = newpixelray(&c, width, height, x, y, 0, i, j, superS, df);
 						color += pixelColor(pixRay, c.location, l, o, width, height, x, y, brdf, mode, 0, &bn, sds, gi, 2, 128);
 					}
 				}

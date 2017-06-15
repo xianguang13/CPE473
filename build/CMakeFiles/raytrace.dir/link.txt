@@ -1,0 +1,1 @@
+/bin/c++    -std=c++0x -Wall -pedantic    CMakeFiles/raytrace.dir/source/main.cpp.o CMakeFiles/raytrace.dir/source/parser.cpp.o CMakeFiles/raytrace.dir/source/functions.cpp.o  -o raytrace -rdynamic -lGL 
